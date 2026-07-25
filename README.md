@@ -24,7 +24,7 @@ Built for freelancers, small agencies, consultants, and solo service businesses 
 ## Setup Steps
 
 1. Import the workflow: open n8n, click "Import from File," and select `workflow/invoice-chaser.json` from this repo.
-2. Make a copy of the Google Sheets template (link below) into your own Google Drive.
+2. Make a copy of the Google Sheets template (https://docs.google.com/spreadsheets/d/1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8/edit?usp=sharing) into your own Google Drive.
 3. In n8n, connect your Google Sheets account to the "Get row(s) in sheet" and "Update row" nodes, pointing them to your copied Sheet.
 4. Connect your Gmail account via OAuth2 to the "Send a message" nodes.
 5. Add your Groq API key to the HTTP Request nodes (as a header credential or in the node's authentication settings).
