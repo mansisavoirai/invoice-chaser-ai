@@ -1,0 +1,1257 @@
+{
+  "name": "invoice-chaser.json",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -192,
+        -112
+      ],
+      "id": "4b308105-2d8d-4835-aa13-e798dfce8bf0",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Invoices",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        0,
+        -112
+      ],
+      "id": "a42d9e96-f32c-43d3-93d1-a9ce31f49040",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Uk4H92VCfGcCsGaO",
+          "name": "Google Sheets account 6"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json[\"Days Overdue\"] >= 1 && $json[\"Days Overdue\"] <= 7 }}",
+                    "rightValue": 1,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    },
+                    "id": "8d6c7b13-a028-4219-9802-15a6c015765d"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Tier1_Friendly "
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c5ddb6e8-4c6b-42ef-a309-0fcfb899ee61",
+                    "leftValue": "={{ $json[\"Days Overdue\"] >= 8 && $json[\"Days Overdue\"] <= 14 }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Tier2_Firm"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "22ddd2b2-9067-48c9-87e6-95b66ff2c078",
+                    "leftValue": "={{ $json[\"Days Overdue\"] >= 15 && $json[\"Days Overdue\"] <= 30 }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Tier3_Urgent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "bb08d1c2-f9e1-4fc6-ba2f-cbc2897ba6a7",
+                    "leftValue": "={{ $json[\"Days Overdue\"] > 30 }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "true",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Tier4_Final"
+            }
+          ]
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        400,
+        -144
+      ],
+      "id": "592250d1-4fd0-4b25-83a1-8261254b2ed2",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a professional invoice assistant for a small business. Your job is to write invoice follow-up emails that are firm but maintain the client relationship. Never sound automated or template-like. Always write as if a real person is writing it. Keep emails under 120 words. Do not use bullet points. Sign off with the business owner's first name only.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Write an invoice follow-up email.\\n\\nBusiness owner name: Mansi\\nClient name: {{ $json['Client Name'] }}\\nInvoice number: {{ $json['Invoice Number'] }}\\nInvoice amount: {{ $json['Formatted Amount'] }}\\nDays overdue: {{ $json['Days Overdue'] }}\\nTone level: Friendly\\nPrevious reminders sent: {{ $json['Reminder Count'] }}\\n\\nWrite the subject line on the first line, then a blank line, then the email body.\\nStart the email by addressing the client by name (e.g. \\\"Hi {{ $json['Client Name'] }}\\\"). Do not add any labels or prefixes.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        784,
+        -368
+      ],
+      "id": "715e5481-2d3e-4502-b894-8f69d66b0732",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FEfx8aWhkkO30Ne5",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a professional invoice assistant for a small business. Your job is to write invoice follow-up emails that are firm but maintain the client relationship. Never sound automated or template-like. Always write as if a real person is writing it. Keep emails under 120 words. Do not use bullet points. Sign off with the business owner's first name only. This is a FIRM tone email — the client has already been reminded once before with no response. Be noticeably more direct than a first-time friendly reminder, and reference that this is a follow-up to a prior contact, without sounding aggressive.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Write an invoice follow-up email.\nBusiness owner name: Mansi\nClient name: {{ $json['Client Name'] }}\nInvoice number: {{ $json['Invoice Number'] }}\nInvoice amount: {{ $json['Currency'] }}{{ $json['Invoice Amount'] }}\nDays overdue: {{ $json['Days Overdue'] }}\nTone level: Firm\nPrevious reminders sent: {{ $json['Reminder Count'] }}\nWrite the subject line on the first line, then a blank line, then the email body. The subject line must NOT contain the words \"Urgent\" or \"Final Notice\" — keep it plain and direct. Start the email body by addressing the client by name (e.g. \"Hi {{ $json['Client Name'] }},\"). Do not add any labels or prefixes.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        800,
+        -144
+      ],
+      "id": "7af75af8-a215-46d6-b514-1ca5762dc942",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FEfx8aWhkkO30Ne5",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a professional invoice assistant for a small business. Your job is to write invoice follow-up emails that are firm but maintain the client relationship. Never sound automated or template-like. Always write as if a real person is writing it. Keep emails under 120 words. Do not use bullet points. Sign off with the business owner's first name only. This is an URGENT tone email — the client has been reminded multiple times already with no response. The email must clearly convey genuine concern and urgency, mention that this follows several prior reminders, and ask for prompt action, while staying professional.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Write an invoice follow-up email.\nBusiness owner name: Mansi\nClient name: {{ $json['Client Name'] }}\nInvoice number: {{ $json['Invoice Number'] }}\nInvoice amount: {{ $json['Currency'] }}{{ $json['Invoice Amount'] }}\nDays overdue: {{ $json['Days Overdue'] }}\nTone level: Urgent\nPrevious reminders sent: {{ $json['Reminder Count'] }}\nWrite the subject line on the first line, then a blank line, then the email body. The subject line MUST start with the exact word \"Urgent:\" followed by a short description — this is required every time, no exceptions. Start the email body by addressing the client by name (e.g. \"Hi {{ $json['Client Name'] }},\"). Do not add any labels or prefixes.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        912,
+        32
+      ],
+      "id": "dc395596-0217-46b7-b9bc-7d4e54a623db",
+      "name": "HTTP Request2",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FEfx8aWhkkO30Ne5",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"llama-3.3-70b-versatile\",\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a professional invoice assistant for a small business. Your job is to write invoice follow-up emails that are firm but maintain the client relationship. Never sound automated or template-like. Always write as if a real person is writing it. Keep emails under 120 words. Do not use bullet points. Sign off with the business owner's first name only. This is a FINAL NOTICE email — the client has ignored multiple prior reminders over a long period. The email must be serious and firm, clearly state a real consequence if payment is not made soon (for example: late fees, referral to collections, or pausing further work/services), while remaining professional and not rude or threatening.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": \"Write an invoice follow-up email.\nBusiness owner name: Mansi\nClient name: {{ $json['Client Name'] }}\nInvoice number: {{ $json['Invoice Number'] }}\nInvoice amount: {{ $json['Currency'] }}{{ $json['Invoice Amount'] }}\nDays overdue: {{ $json['Days Overdue'] }}\nTone level: Final Notice\nPrevious reminders sent: {{ $json['Reminder Count'] }}\nWrite the subject line on the first line, then a blank line, then the email body. The subject line MUST start with the exact words \"Final Notice:\" followed by a short description — this is required every time, no exceptions. The email body must clearly state one specific consequence if payment is not received soon. Start the email body by addressing the client by name (e.g. \"Hi {{ $json['Client Name'] }},\"). Do not add any labels or prefixes.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1056,
+        208
+      ],
+      "id": "5b2d3600-2cfe-41a9-bd3e-335adc67c6ee",
+      "name": "HTTP Request3",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "FEfx8aWhkkO30Ne5",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all(); const now = new Date($now.setZone('Asia/Kolkata').toISO()); return items.map((item, index) => { const newJson = {}; for (const key in item.json) { const value = item.json[key]; newJson[key.trim()] = typeof value === 'string' ? value.trim() : value; } newJson['Client Name'] = newJson['Client Name'] || 'Valued Client'; newJson['Invoice Amount'] = Number(newJson['Invoice Amount']) || 0; newJson['Formatted Amount'] = newJson['Currency'] + ' ' + newJson['Invoice Amount'].toLocaleString('en-IN'); return { json: newJson, pairedItem: index }; }).filter(item => item.json['Status'] !== 'Paid').filter(item => item.json['Client Email'] && item.json['Client Email'].includes('@')).filter(item => { const lastContacted = item.json['Last Contacted']; if (!lastContacted) return true; const lastDate = new Date(lastContacted); const hoursSince = (now - lastDate) / (1000 * 60 * 60); return hoursSince >= 48; });"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        -112
+      ],
+      "id": "e43b2a23-8dd5-4a43-914e-96acdaf03388",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "sendTo": "=mansi.savoir.ai@gmail.com",
+        "subject": "={{ $json.choices[0].message.content.split('\\n')[0] }}",
+        "emailType": "text",
+        "message": "={{ $json.choices[0].message.content.split('\\n').slice(1).join('\\n') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1008,
+        -368
+      ],
+      "id": "ef88f9df-da05-44d5-8288-5845ab587df8",
+      "name": "Send a message",
+      "webhookId": "8971f341-2cc7-4072-a896-bb5233a5d8a2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "2or3jCouCjfUxkIs",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "=mansi.savoir.ai@gmail.com",
+        "subject": "={{ $json.choices[0].message.content.split('\\n')[0] }}",
+        "emailType": "text",
+        "message": "={{ $json.choices[0].message.content.split('\\n').slice(1).join('\\n') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1024,
+        -144
+      ],
+      "id": "843876ab-c6aa-4192-9273-111b47b6796f",
+      "name": "Send a message1",
+      "webhookId": "8971f341-2cc7-4072-a896-bb5233a5d8a2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "2or3jCouCjfUxkIs",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "=mansi.savoir.ai@gmail.com",
+        "subject": "={{ $json.choices[0].message.content.split('\\n')[0] }}",
+        "emailType": "text",
+        "message": "={{ $json.choices[0].message.content.split('\\n').slice(1).join('\\n') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1200,
+        32
+      ],
+      "id": "fcf49580-9dc9-4169-b158-52c04e0f6bd6",
+      "name": "Send a message2",
+      "webhookId": "8971f341-2cc7-4072-a896-bb5233a5d8a2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "2or3jCouCjfUxkIs",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "=mansi.savoir.ai@gmail.com",
+        "subject": "={{ $json.choices[0].message.content.split('\\n')[0] }}",
+        "emailType": "text",
+        "message": "={{ $json.choices[0].message.content.split('\\n').slice(1).join('\\n') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1328,
+        208
+      ],
+      "id": "da44691a-966a-4199-8284-084da9a81e5d",
+      "name": "Send a message3",
+      "webhookId": "8971f341-2cc7-4072-a896-bb5233a5d8a2",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "2or3jCouCjfUxkIs",
+          "name": "Gmail account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Invoices",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Reminder Count": "= {{ $('Get row(s) in sheet').item.json['Reminder Count'] + 1 }}",
+            "Last Contacted": "={{ $now.setZone('Asia/Kolkata').toISO() }}",
+            "row_number": "={{ $('Get row(s) in sheet').item.json['row_number'] }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Client Name ",
+              "displayName": "Client Name ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Client Email",
+              "displayName": "Client Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice Number",
+              "displayName": "Invoice Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Invoice Amount",
+              "displayName": "Invoice Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Days Overdue",
+              "displayName": "Days Overdue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reminder Count",
+              "displayName": "Reminder Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Contacted",
+              "displayName": "Last Contacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1280,
+        -144
+      ],
+      "id": "4c4370e3-fe9a-46e0-9d72-e0673a349194",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Uk4H92VCfGcCsGaO",
+          "name": "Google Sheets account 6"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Invoices",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Reminder Count": "= {{ $('Get row(s) in sheet').item.json['Reminder Count'] + 1 }}",
+            "Last Contacted": "={{ $now.setZone('Asia/Kolkata').toISO() }}",
+            "row_number": "={{ $('Get row(s) in sheet').item.json['row_number'] }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Client Name ",
+              "displayName": "Client Name ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Client Email",
+              "displayName": "Client Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice Number",
+              "displayName": "Invoice Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Invoice Amount",
+              "displayName": "Invoice Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Days Overdue",
+              "displayName": "Days Overdue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reminder Count",
+              "displayName": "Reminder Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Contacted",
+              "displayName": "Last Contacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1408,
+        32
+      ],
+      "id": "af5e6fa7-3582-49b2-8371-94990cc31323",
+      "name": "Update row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Uk4H92VCfGcCsGaO",
+          "name": "Google Sheets account 6"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Invoices",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Reminder Count": "= {{ $('Get row(s) in sheet').first().json['Reminder Count'] + 1 }} ",
+            "Last Contacted": "={{ $now.setZone('Asia/Kolkata').toISO() }}",
+            "row_number": "={{ $('Get row(s) in sheet').item.json['row_number'] }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Client Name ",
+              "displayName": "Client Name ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Client Email",
+              "displayName": "Client Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice Number",
+              "displayName": "Invoice Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Invoice Amount",
+              "displayName": "Invoice Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Days Overdue",
+              "displayName": "Days Overdue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reminder Count",
+              "displayName": "Reminder Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Contacted",
+              "displayName": "Last Contacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1536,
+        208
+      ],
+      "id": "0c938e00-7f46-477e-9077-5d970447bc9c",
+      "name": "Update row in sheet2",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Uk4H92VCfGcCsGaO",
+          "name": "Google Sheets account 6"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8",
+          "mode": "list",
+          "cachedResultName": "Untitled spreadsheet",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Invoices",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1xSc-j8QtoCg6rRLB6w5TXGQRS-okjmCPTfCvbSlPIb8/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Reminder Count": "= {{ $('Get row(s) in sheet').item.json['Reminder Count'] + 1 }}",
+            "Last Contacted": "={{ $now.setZone('Asia/Kolkata').toISO() }}",
+            "row_number": "={{ $('Get row(s) in sheet').item.json['row_number'] }}"
+          },
+          "matchingColumns": [
+            "row_number"
+          ],
+          "schema": [
+            {
+              "id": "Client Name ",
+              "displayName": "Client Name ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Client Email",
+              "displayName": "Client Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Invoice Number",
+              "displayName": "Invoice Number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Invoice Amount",
+              "displayName": "Invoice Amount",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Currency",
+              "displayName": "Currency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Due Date",
+              "displayName": "Due Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Days Overdue",
+              "displayName": "Days Overdue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Reminder Count",
+              "displayName": "Reminder Count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Contacted",
+              "displayName": "Last Contacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1264,
+        -368
+      ],
+      "id": "06814330-4c45-4680-b390-ab71bc9bc12f",
+      "name": "Update row in sheet3",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "Uk4H92VCfGcCsGaO",
+          "name": "Google Sheets account 6"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "6341904892",
+        "text": "= {{ $json.summaryText }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        272,
+        192
+      ],
+      "id": "d69abd45-0f7f-4832-a347-27ef4911355f",
+      "name": "Send a text message",
+      "webhookId": "5c6cbcbd-3637-4847-ac14-2a00a8d21148",
+      "credentials": {
+        "telegramApi": {
+          "id": "nduQTksqIBXOriV0",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const count = $('Code in JavaScript').all().length; return [{ json: { summaryText: `Invoice Chaser Daily Summary: ${count} invoice(s) processed today.` } }]; "
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        16,
+        192
+      ],
+      "id": "fd598f2a-8311-4809-91be-ba134d2cdbf5",
+      "name": "Build Summary"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Build Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Send a message2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Send a message3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message2": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message3": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Summary": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Kolkata",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "956af5fb-5fb2-4b89-9aa9-bacc90999d74",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b8cd6f469af2103c194c3c875ebd207bbfbc25ae03d0e925004d2ab8397bf359"
+  },
+  "id": "mfk5kgSSNOddWeFZ",
+  "tags": []
+}
