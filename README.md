@@ -39,4 +39,4 @@ Built for freelancers, small agencies, consultants, and solo service businesses 
 
 ## Demo Video
 
-[Add your Loom link here]
+[https://www.loom.com/share/a38647d4a71d46b0a99325f7af779d2d]
